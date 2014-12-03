@@ -1,7 +1,6 @@
 #include "triangle.h"
 #include "vertex.h"
 #include "math.h"
-#include "fresnel.h"
 
 //#define Normalize255(x) min( max(short(0),x), short(4095) )>>4 
 //
@@ -17,7 +16,7 @@ float normalize(Vertex v)
 Color raytrace(Vertex origin, Vertex direction, vector<Triangle> triangle_list, float depth, int* count,int lights)
 {
 	float t_min = 10000;
-	int triangle_index = 0;
+	int triangle_index = -1;
 	Color output_color(0,0,0,1);
 	Triangle tri1, tri2;
 	for( int i = 0; i < triangle_list.size(); i++ )
@@ -26,14 +25,14 @@ Color raytrace(Vertex origin, Vertex direction, vector<Triangle> triangle_list, 
 		tri1.intersection(origin, direction);
 		bool inter = tri1.inter;
 		float t = tri1.t;
-		if( (inter == true) && (t < t_min) )
+		if( (inter == true) && (t < t_min) && (t>0.001) )
 		{
 			t_min = t;
 			triangle_index = i;
 		}
 	}
 
-	if( triangle_index != 0)			// if some triangle is found intersected by the ray
+	if( triangle_index != -1)			// if some triangle is found intersected by the ray
 	{
 		*count=*count+1;
 		tri1 = triangle_list[triangle_index];
@@ -124,7 +123,7 @@ Color raytrace(Vertex origin, Vertex direction, vector<Triangle> triangle_list, 
                     reflect_dir.y = reflect_dir.y/reflect_norm;
                     reflect_dir.z = reflect_dir.z/reflect_norm;
 
-                    Vertex refract_dir = (direction.sub(nhit.scaleVertex(n2/n1))).sub(nhit.scaleVertex(direction.dot(nhit)));
+                    Vertex refract_dir = (direction.add((nhit.scaleVertex(direction.dot(nhit))).scaleVertex(n2/n1))).sub(nhit.scaleVertex(direction.dot(nhit)));
                     float refract_norm = normalize(refract_dir);
                     refract_dir.x = refract_dir.x/refract_norm;
                     refract_dir.y = refract_dir.y/refract_norm;
@@ -152,7 +151,7 @@ Color raytrace(Vertex origin, Vertex direction, vector<Triangle> triangle_list, 
 					}
                     else
                     {
-						Vertex refract_dir = (direction.add(nhit.scaleVertex(n1/n2))).sub(nhit.scaleVertex(direction.dot(nhit)));
+						Vertex refract_dir = (direction.add((nhit.scaleVertex(direction.dot(nhit))).scaleVertex(n1/n2))).sub(nhit.scaleVertex(direction.dot(nhit)));
                         float refract_norm = normalize(refract_dir);
                         refract_dir.x = refract_dir.x/refract_norm;
                         refract_dir.y = refract_dir.y/refract_norm;

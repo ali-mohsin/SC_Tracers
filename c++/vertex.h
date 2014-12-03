@@ -7,12 +7,14 @@ public:
 	float x;
 	float y;
 	float z;
+	float v[3];
 
 	Vertex(float a,float b,float c)
 	{
 		x=a;
 		y=b;
 		z=c;
+
 	}
 
 	Vertex()
@@ -33,40 +35,47 @@ public:
 		z += other.z;
 	}
 
+	void operator=(Vertex &other_color)
+	{
+		x = other_color.x;
+		y = other_color.y;
+		z = other_color.z;
+	}
+
 	Vertex sub(Vertex other)
 	{
-		Vertex v;
-		v.x = x-other.x;
-		v.y = y-other.y;
-		v.z = z-other.z;
-		return v;
+		Vertex vv;
+		vv.x = x-other.x;
+		vv.y = y-other.y;
+		vv.z = z-other.z;
+		return vv;
 	}
 
 	Vertex add(Vertex other)
 	{
-		Vertex v;
-		v.x = x+other.x;
-		v.y = y+other.y;
-		v.z = z+other.z;
-		return v;
+		Vertex vv;
+		vv.x = x+other.x;
+		vv.y = y+other.y;
+		vv.z = z+other.z;
+		return vv;
 	}
 
 	Vertex mul(Vertex other)
 	{
-		Vertex v;
-		v.x = x*other.x;
-		v.y = y*other.y;
-		v.z = z*other.z;
-		return v;
+		Vertex vv;
+		vv.x = x*other.x;
+		vv.y = y*other.y;
+		vv.z = z*other.z;
+		return vv;
 	}
 
 	Vertex cross(Vertex other)
 	{
-		Vertex v;
-		v.x = y * other.z - z*other.y;
-		v.y = z * other.x - x*other.z;
-		v.z = x * other.y - y*other.x;
-		return v;
+		Vertex vv;
+		vv.x = y * other.z - z*other.y;
+		vv.y = z * other.x - x*other.z;
+		vv.z = x * other.y - y*other.x;
+		return vv;
 	}
 
 	float dot(Vertex other)
@@ -81,18 +90,47 @@ public:
 
 	Vertex scaleVertex(float s)
 	{
-		Vertex v;
-		v.x = x * s;
-		v.y = y * s;
-		v.z = z * s;
-		return v;
+		Vertex vv;
+		vv.x = x * s;
+		vv.y = y * s;
+		vv.z = z * s;
+		return vv;
 	}
 
-	void operator=(Vertex &other_vertex)
+
+
+	void matMul(float m[][3])
 	{
-		x = other_vertex.x;
-		y = other_vertex.y;
-		z = other_vertex.z;
+		v[0]=x;
+		v[1]=y;
+		v[2]=z;
+		float ans[3];
+		for(int i=0;i<3;i++)
+		{
+			ans[i]=0;
+		}
+
+		for(int i=0;i<3;i++)
+		{
+			for(int j=0;j<3;j++)
+			{
+				//std::cout<<m[i][j]<<" "<<v[j]<<"\n";
+				ans[i]+=m[i][j]*v[j];
+			}
+		}
+
+		x=ans[0];
+		y=ans[1];
+		z=ans[2];
+	}
+
+	void norm()
+	{
+		float mag=sqrt(x*x+y*y+z*z);
+		x/=mag;
+		y/=mag;
+		z/=mag;
+	
 	}
 };
 

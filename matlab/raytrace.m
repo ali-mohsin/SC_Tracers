@@ -8,7 +8,8 @@ function output_color = raytrace( origin,  direction, triangle_list, depth )
         triangle = triangle_list(ii,:);
         [inter,t] = intersect_tri(origin,direction,triangle);
 
-        if ((inter==true) && (t<t_min)) 
+        if ((inter==true) && (t<t_min) && (t>1e-3)) 
+            
             t_min = t;
             triangle_index = ii;
         end
@@ -19,7 +20,7 @@ function output_color = raytrace( origin,  direction, triangle_list, depth )
         triangle = triangle_list(triangle_index,:);
         
         if (triangle(13)~=0) % it is a light source
-            output_color = uint8(triangle(10:12)*255);
+            output_color = triangle(10:12);
         elseif (triangle(16) == 68) % it is a diffusive surface
             for ii = 1:size(triangle_list,1)
                 if (triangle_list(ii,13)~=0)   % it is a light source
@@ -49,7 +50,7 @@ function output_color = raytrace( origin,  direction, triangle_list, depth )
             end
             
         elseif (triangle(16) == 84)     % it is a transparent surface
-            if (depth > 5) 
+            if (depth > 10) 
                 return;
             else
                 p1 = triangle(1:3);p2 = triangle(4:6);p3=triangle(7:9);
@@ -64,10 +65,14 @@ function output_color = raytrace( origin,  direction, triangle_list, depth )
                     theta1 = acosd(-angle);
                     [reflection,theta2] = fresnel(n1,n2,theta1);
                     transmission = 1 - reflection;
+                  %  direction
                     reflect_dir = direction - nhit*2*(direction*nhit');
                     reflect_dir = reflect_dir/norm(reflect_dir);
-                    refract_dir = direction-nhit*n2/n1-nhit*(direction*nhit');
+                    refract_dir = direction+nhit*(direction*nhit')*n2/n1-nhit*(direction*nhit');
                     refract_dir = refract_dir/norm(refract_dir);
+                   % refract_dir
+                  %  depth
+                    
                     output_color = reflection*raytrace(inter_position,reflect_dir,triangle_list,depth+1)+...
                                    transmission*raytrace(inter_position,refract_dir,triangle_list,depth+1);
                     
@@ -81,10 +86,12 @@ function output_color = raytrace( origin,  direction, triangle_list, depth )
                     if (transmission ==0)   % total internal reflection
                          output_color = reflection*raytrace(inter_position,reflect_dir,triangle_list,depth+1);
                     else
-                        refract_dir = direction+nhit*n1/n2-nhit*(direction*nhit');
+                        refract_dir = direction+nhit*(direction*nhit')*n1/n2-nhit*(direction*nhit');
                         refract_dir = refract_dir/norm(refract_dir);
+
+                    
                         output_color = reflection*raytrace(inter_position,reflect_dir,triangle_list,depth+1)+...
-                        transmission*raytrace(inter_position,refract_dir,triangle_list,depth+1);                        
+                        transmission*raytrace(inter_position,refract_dir,triangle_list,depth+1);   
                     end
                 end
             end
