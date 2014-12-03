@@ -169,7 +169,7 @@ int main()
 	Triangle t2;
 	int	status = 0; 
 
-	int lights = 4; //no.of lights
+	int lights = 25; //no.of lights
 
 	ImageBuffer image(WIDTH,HEIGHT);
 	status |= image.initImageBuf();
@@ -195,6 +195,12 @@ int main()
 		{1,1,0,2.745,10.75, 0, -1, 0, 0, 0, -1},
 		{1,1,0,0,6,dir.x,dir.y,dir.z,0,1,0}
 	};
+
+
+	float x_l[5] =  {-0.5000,   -0.2500  ,       0   , 0.2500  ,  0.5000};
+	float y_l[5] =  {-0.5000,   -0.2500  ,       0   , 0.2500  ,  0.5000};
+	float light_list[5*5*num_lights][3] = {0}; // zeros(num_lights,3);
+
 
 
 	for(int i=0;i<num_lights;i++)
@@ -266,17 +272,31 @@ int main()
 		t2.emissionColor = Color(1,1,1,1);
 		d.tri.push_back(t1);
 		d.tri.push_back(t2);
+
+		int count_here=0;
+		//hardcoding with 5 because size of x_l is 5
+		for (int ii=0;ii<5;ii++){
+			for(int jj=0;jj<5;jj++){
+				float pos[4]={x_l[ii],y_l[jj],0,1};	
+				float M[4][4];
+				matMult(trans,x_wi,M);
+				pointMult(M,pos,pos);
+				pos[0]/=pos[3];
+				pos[1]/=pos[3];
+				pos[2]/=pos[3];
+
+				light_list[ii*jj+jj][0]= pos[0];
+				light_list[ii*jj+jj][1]= pos[1];
+				light_list[ii*jj+jj][2]= pos[2];
+			}
+		}
 	}
 
-/*
-	float x_l[5] =  {-0.5000,   -0.2500  ,       0   , 0.2500  ,  0.5000};
-	float y_l[5] =  {-0.5000,   -0.2500  ,       0   , 0.2500  ,  0.5000};
-	int count = 0;t
-	float light_list[5*5*num_lights][3] = {0};// zeros(num_lights,3);
-	for (int li=0; li < num_lights;li++)
-	{
-		
-	}
+
+
+	
+
+	/*
     light = lights(l_ii,:);
 
     trans = [light(1),0 0 light(3); 0, light(2),0 light(4);0 0 1 light(5);0 0 0 1]; 
@@ -323,7 +343,7 @@ end
 			dr_origin.x=dr.x*9-0.1;
 			dr_origin.y=dr.y*9+3;
 			dr_origin.z=dr.z*9;
-			output_color = raytrace(dr_origin,dr,d.tri,0,count,lights);
+			output_color = raytrace(dr_origin,dr,d.tri,0,count,lights,light_list);
 
 			image.setImageBuf(x,y, (output_color.r), (output_color.g), (output_color.b));
 		}
