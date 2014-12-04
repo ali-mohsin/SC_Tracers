@@ -1,7 +1,6 @@
 #include "triangle.h"
 #include "vertex.h"
 #include "math.h"
-#include "fresnel.h"
 
 //#define Normalize255(x) min( max(short(0),x), short(4095) )>>4 
 //
@@ -14,10 +13,10 @@ float normalize(Vertex v)
 	return sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
 }
 
-Color raytrace(Vertex origin, Vertex direction, vector<Triangle> triangle_list, float depth, int* count,int lights)
+Color raytrace(Vertex origin, Vertex direction, vector<Triangle> triangle_list, float depth, int* count,int lights, float n2,float light_list[][3])
 {
 	float t_min = 10000;
-	int triangle_index = 0;
+	int triangle_index = -1;
 	Color output_color(0,0,0,1);
 	Triangle tri1, tri2;
 	for( int i = 0; i < triangle_list.size(); i++ )
@@ -33,7 +32,7 @@ Color raytrace(Vertex origin, Vertex direction, vector<Triangle> triangle_list, 
 		}
 	}
 
-	if( triangle_index != 0)			// if some triangle is found intersected by the ray
+	if( triangle_index != -1)			// if some triangle is found intersected by the ray
 	{
 		*count=*count+1;
 		tri1 = triangle_list[triangle_index];
@@ -48,16 +47,11 @@ Color raytrace(Vertex origin, Vertex direction, vector<Triangle> triangle_list, 
 		else  if(tri1.token == "D")
 			{ 
 				// it is a diffusive surface
-			for( int i = 0; i < triangle_list.size(); i++ )
+			for( int i = 0; i < lights; i++ )
 			{
-				if( triangle_list[i].token == "L" )		// it is a light surface
-				{
-					tri2 = triangle_list[i];
 					Vertex l_position(0,0,0), inter_position(0,0,0);
-					l_position += tri2.v1;
-					l_position += tri2.v2;
-					l_position += tri2.v3;
-					l_position.x /= 3;	l_position.y /= 3;	l_position.z /= 3;
+				
+					l_position.x = light_list[i][0];	l_position.y = light_list[i][1];	l_position.z = light_list[i][2];
 					inter_position.x = origin.x + direction.x*t_min;	inter_position.y = origin.y + direction.y*t_min;	inter_position.z = origin.z + direction.z*t_min;
 					Vertex dr = inter_position.sub(l_position);
 					float t_light = normalize(dr);
@@ -65,7 +59,7 @@ Color raytrace(Vertex origin, Vertex direction, vector<Triangle> triangle_list, 
 					float T = (float)1/lights; //normalizing so that we divide by number of light sources.
 					for ( int j = 0; j < triangle_list.size(); j++ )
 					{
-                        if ( j != i && j != triangle_index )
+						if ( j != triangle_index && triangle_list[j].token !=  "L")
 						{
                             Triangle triangle_test = triangle_list[j];
 							Vertex neg_dr(-dr.x,-dr.y,-dr.z);
@@ -86,14 +80,13 @@ Color raytrace(Vertex origin, Vertex direction, vector<Triangle> triangle_list, 
 					float nhit_norm = normalize(nhit);
                     nhit.x = nhit.x/nhit_norm;     nhit.y = nhit.y/nhit_norm;   nhit.z = nhit.z/nhit_norm;             // nhit = nhit/norm(nhit) 
 					Vertex neg_nhit(-nhit.x,-nhit.y,-nhit.z);
-                    output_color = output_color + tri1.surfaceColor.scaleColor(max(float(0),neg_nhit.dot(dr))).mul(tri2.emissionColor.scaleColor(T));		
-				}
+                    output_color = output_color + tri1.surfaceColor.scaleColor(max(float(0),neg_nhit.dot(dr))).mul(Color(1,1,1,1).scaleColor(T));		
 			}
 			return output_color;
 		}
         else if (tri1.token == "T")			// It is a transparent surface
 		{
-            if (depth > 5)
+            if (depth > 10)
                 return Color(0,0,0,1);
             else
 			{
@@ -105,7 +98,7 @@ Color raytrace(Vertex origin, Vertex direction, vector<Triangle> triangle_list, 
                 nhit.x = nhit.x/nhit_norm;    nhit.y = nhit.y/nhit_norm;  nhit.z = nhit.z/nhit_norm;             // nhit = nhit/norm(nhit)   
 
                 float n1 = 1.0;
-                float n2 = 1.0;
+                //float n2 = 2.46;
 
                 float angle = nhit.dot(direction);
                 Vertex inter_position(0,0,0);
@@ -129,8 +122,8 @@ Color raytrace(Vertex origin, Vertex direction, vector<Triangle> triangle_list, 
                     refract_dir.x = refract_dir.x/refract_norm;
                     refract_dir.y = refract_dir.y/refract_norm;
                     refract_dir.z = refract_dir.z/refract_norm;
-                    output_color = raytrace(inter_position,reflect_dir,triangle_list,depth+1,count,lights).scaleColor(reflection) +
-                                   raytrace(inter_position,refract_dir,triangle_list,depth+1,count,lights).scaleColor(transmission);
+                    output_color = raytrace(inter_position,reflect_dir,triangle_list,depth+1,count,lights,n2,light_list).scaleColor(reflection) +
+                                   raytrace(inter_position,refract_dir,triangle_list,depth+1,count,lights,n2,light_list).scaleColor(transmission);
 					return output_color;
                 }
                 else			// from inside to outside
@@ -147,7 +140,7 @@ Color raytrace(Vertex origin, Vertex direction, vector<Triangle> triangle_list, 
                     reflect_dir.z = reflect_dir.z/reflect_norm;
                     if (transmission == 0)			//total internal reflection
 					{
-                        output_color = raytrace(inter_position,reflect_dir,triangle_list,depth+1,count,lights).scaleColor(reflection);
+                        output_color = raytrace(inter_position,reflect_dir,triangle_list,depth+1,count,lights,n2,light_list).scaleColor(reflection);
 						return output_color;
 					}
                     else
@@ -157,7 +150,7 @@ Color raytrace(Vertex origin, Vertex direction, vector<Triangle> triangle_list, 
                         refract_dir.x = refract_dir.x/refract_norm;
                         refract_dir.y = refract_dir.y/refract_norm;
                         refract_dir.z = refract_dir.z/refract_norm;
-                        output_color = raytrace(inter_position,reflect_dir,triangle_list,depth+1,count,lights).scaleColor(reflection) + raytrace(inter_position,refract_dir,triangle_list,depth+1,count,lights).scaleColor(transmission);
+                        output_color = raytrace(inter_position,reflect_dir,triangle_list,depth+1,count,lights,n2,light_list).scaleColor(reflection) + raytrace(inter_position,refract_dir,triangle_list,depth+1,count,lights,n2,light_list).scaleColor(transmission);
 						return output_color;
 					}
                 }

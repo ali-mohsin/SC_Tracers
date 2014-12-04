@@ -11,6 +11,9 @@ using namespace std;
 #endif
 
 
+#ifndef FRESNEL_H
+
+
 struct Fresnel{
         float reflection;
         float theta2;
@@ -55,3 +58,4 @@ Fresnel fresnel(float n1, float n2, float theta1){
 }
 
 
+#endif
