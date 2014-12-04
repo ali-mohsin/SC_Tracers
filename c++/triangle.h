@@ -52,7 +52,7 @@ public:
 		computeNormal();
 	}
 
-
+	
 	void computeNormal()
 	{
 		edge1 = v2.sub(v1);
