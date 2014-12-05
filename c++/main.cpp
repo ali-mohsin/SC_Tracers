@@ -209,7 +209,7 @@ int main ( int argc)
 	int lights = 4; //no.of lights
 	ImageBuffer image(WIDTH,HEIGHT);
 	status |= image.initImageBuf();
-	Parser* p = new Parser("E:\\USC\\CSCI 580 (Fall 2014)\\Final\\diamond\\diamond_trans_310.asc");
+	Parser* p = new Parser("diamond_trans.asc");
 	Diamond d = Diamond(p->parse());
 	int* count= new int(0);
 	float angle_x = 25;
@@ -413,7 +413,7 @@ end
 	*count=*count+1-1;
 
 	FILE *outfile;
-	if( (outfile  = fopen( "310.ppm" , "wb" )) == NULL )
+	if( (outfile  = fopen( "final_output.ppm" , "wb" )) == NULL )
 	{
 		cout<<"Failed to open output file"<<endl;
 		return 0;
